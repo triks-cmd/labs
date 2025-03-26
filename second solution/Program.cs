@@ -15,20 +15,19 @@ namespace EmployeeManagement
                     return;
                 }
 
+                var employeeOps = new EmployeeOperations(employees);
 
-                EmployeeOperations.SortEmployeesByDepartment(employees);
+                employeeOps.SortEmployeesByDepartment();
                 Console.WriteLine("\nEmployees sorted by department:");
                 foreach (var emp in employees)
                 {
                     emp.Print();
                 }
 
-
-                double overallAverage = EmployeeOperations.ComputeOverallAverageSalary(employees);
+                double overallAverage = employeeOps.ComputeOverallAverageSalary();
                 Console.WriteLine($"\nOverall Average Salary: {overallAverage:F2}");
                 Console.WriteLine("\nEmployees with above average salary by department:");
-                EmployeeOperations.PrintEmployeesAboveAverage(employees, overallAverage);
-
+                employeeOps.PrintEmployeesAboveAverage(overallAverage);
 
                 Console.Write("\nEnter the minimum salary threshold: ");
                 if (!double.TryParse(Console.ReadLine(), out double minSalaryThreshold))
@@ -38,7 +37,7 @@ namespace EmployeeManagement
                 }
 
                 Console.WriteLine("\nEmployees with minimum salary below threshold:");
-                EmployeeOperations.PrintEmployeesWithMinimumSalaryBelow(employees, minSalaryThreshold);
+                employeeOps.PrintEmployeesWithMinimumSalaryBelow(minSalaryThreshold);
             }
             catch (Exception ex)
             {
