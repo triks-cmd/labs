@@ -3,39 +3,44 @@
 namespace CreditCardApp
 {
     /// <summary>
-    /// The default validator for credit card details.
+    /// Provides functionality to validate credit card details.
     /// </summary>
     public class CardValidator : ICardValidator
     {
+        private const int ValidCardLength = 16;
+
+        
         public void Validate(string cardNumber, string holderName, decimal creditLimit)
         {
-            if (string.IsNullOrWhiteSpace(cardNumber) || cardNumber.Length != 16 || !IsAllDigits(cardNumber))
+            if (string.IsNullOrWhiteSpace(cardNumber))
             {
-                throw new ArgumentException("The card number must consist of 16 digits.", nameof(cardNumber));
+                throw new ArgumentException("Card number cannot be empty.", nameof(cardNumber));
+            }
+
+            if (cardNumber.Length != ValidCardLength)
+            {
+                throw new ArgumentException(
+                    $"Card number must have exactly {ValidCardLength} digits.",
+                    nameof(cardNumber));
+            }
+
+            foreach (char character in cardNumber)
+            {
+                if (!char.IsDigit(character))
+                {
+                    throw new ArgumentException("Card number must contain only digits.", nameof(cardNumber));
+                }
             }
 
             if (string.IsNullOrWhiteSpace(holderName))
             {
-                throw new ArgumentException("Owner name cannot be empty.", nameof(holderName));
+                throw new ArgumentException("Card holder's name cannot be empty.", nameof(holderName));
             }
 
             if (creditLimit < 0)
             {
-                throw new ArgumentException("The credit limit cannot be negative.", nameof(creditLimit));
+                throw new ArgumentException("Credit limit cannot be negative.", nameof(creditLimit));
             }
-        }
-
-        private bool IsAllDigits(string s)
-        {
-            foreach (char c in s)
-            {
-                if (!char.IsDigit(c))
-                {
-                    return false;
-                }
-            }
-
-            return true;
         }
     }
 }

@@ -1,18 +1,38 @@
-﻿
+﻿using System;
+
 namespace CreditCardApp
 {
     /// <summary>
-    /// The default implementation that formats a 16-digit card number.
+    /// Provides functionality to format a credit card number into groups.
     /// </summary>
     public class CardFormatter : ICardFormatter
     {
+        private const int GroupSize = 4;
+
         public string Format(string cardNumber)
         {
-            return string.Format("{0}-{1}-{2}-{3}",
-                cardNumber.Substring(0, 4),
-                cardNumber.Substring(4, 4),
-                cardNumber.Substring(8, 4),
-                cardNumber.Substring(12, 4));
+            if (string.IsNullOrEmpty(cardNumber))
+            {
+                throw new ArgumentException("Card number cannot be null or empty.", nameof(cardNumber));
+            }
+
+            if (cardNumber.Length % GroupSize != 0)
+            {
+                throw new ArgumentException("Invalid card number length.", nameof(cardNumber));
+            }
+
+            string formattedNumber = string.Empty;
+            for (int i = 0; i < cardNumber.Length; i++)
+            {
+                formattedNumber += cardNumber[i];
+
+                if ((i + 1) % GroupSize == 0 && i != cardNumber.Length - 1)
+                {
+                    formattedNumber += "-";
+                }
+            }
+
+            return formattedNumber;
         }
     }
 }
