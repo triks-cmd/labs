@@ -1,31 +1,33 @@
-﻿using System;
-
+﻿/// <summary>
+/// A class that implements the operation of transferring funds from one bank account to another.
+/// </summary>
 namespace FinanceApp.Models
 {
+    
     public class Transfer : BankOperation
     {
-        private readonly BankAccount _sourceAccount;
-        private readonly BankAccount _destinationAccount;
+        private readonly IBankAccount _source;
+        private readonly IBankAccount _destination;
         private readonly decimal _amount;
 
-        public Transfer(BankAccount sourceAccount, BankAccount destinationAccount, decimal amount)
+        
+        public Transfer(IBankAccount source, IBankAccount destination, decimal amount)
         {
-            _sourceAccount = sourceAccount;
-            _destinationAccount = destinationAccount;
+            _source = source;
+            _destination = destination;
             _amount = amount;
         }
 
         public override void Execute()
         {
-            if (_sourceAccount.Withdraw(_amount))
+            if (_source.Withdraw(_amount))
             {
-                _destinationAccount.Deposit(_amount);
-                Console.WriteLine($"Transfer of {_amount:$} from account {_sourceAccount.AccountNumber} to account {_destinationAccount.AccountNumber} completed successfully");
+                _destination.Deposit(_amount);
+                Console.WriteLine($"Transfer of {_amount:C} from {_source.AccountNumber} to {_destination.AccountNumber} completed");
             }
-
             else
             {
-                Console.WriteLine($"Transfer failed. Not enough funds in account {_sourceAccount.AccountNumber}");
+                Console.WriteLine($"Transfer failed from {_source.AccountNumber} to {_destination.AccountNumber}");
             }
         }
     }

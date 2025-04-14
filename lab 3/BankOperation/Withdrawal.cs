@@ -1,13 +1,16 @@
-﻿using System;
-
+﻿/// <summary>
+/// Class representing a bank account withdrawal operation.
+/// </summary>
 namespace FinanceApp.Models
 {
+    
     public class Withdrawal : BankOperation
     {
-        private readonly BankAccount _account;
+        private readonly IBankAccount _account;
         private readonly decimal _amount;
 
-        public Withdrawal(BankAccount account, decimal amount)
+       
+        public Withdrawal(IBankAccount account, decimal amount)
         {
             _account = account;
             _amount = amount;
