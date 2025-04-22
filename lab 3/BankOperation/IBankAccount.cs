@@ -23,7 +23,7 @@ namespace FinanceApp.Models
         void Deposit(decimal amount);
 
         /// <summary>
-        /// Withdraws the specified amount from the account.
+        /// Withdraws the specified amount from the account...
         /// </summary>
         /// <param name="amount">The amount to withdraw. Must be positive.</param>
         /// <returns>
