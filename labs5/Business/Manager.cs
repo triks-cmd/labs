@@ -3,13 +3,16 @@
 namespace Business
 {
     /// <summary>
-    /// Представляет менеджера, управляющего процессами.
+    /// Represents a manager responsible for overseeing processes.
     /// </summary>
     public class Manager : Employee, IManager
     {
+        /// <summary>
+        /// Executes management tasks by writing a message to the console.
+        /// </summary>
         public void Manage()
         {
-            Console.WriteLine("Менеджер управляет процессами");
+            Console.WriteLine("Process Management Manager");
         }
     }
 }

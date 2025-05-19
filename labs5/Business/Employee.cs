@@ -3,29 +3,32 @@
 namespace Business
 {
     /// <summary>
-    /// Базовый абстрактный класс для всех сотрудников.
+    /// Base abstract class for all employees, providing a salary property and project assignment.
     /// </summary>
     public abstract class Employee : IEmployee
     {
-        private int _salary;
+        /// <summary>
+        /// Gets or sets the salary of the employee.
+        /// </summary>
+        public int Salary { get; set; }
+
         private int _projectCount;
 
-        /// <summary>
-        /// Получает или задает зарплату сотрудника.
-        /// </summary>
-        public int Salary
+        /// <inheritdoc />
+        public void AssignProject(int count)
         {
-            get => _salary;
-            set => _salary = value;
+            if (count < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(count), "Number of projects cannot be negative.");
+            }
+                
+            _projectCount = count;
         }
 
-        /// <summary>
-        /// Назначает количество проектов.
-        /// </summary>
-        /// <param name="count">Количество проектов.</param>
-        protected void AssignProject(int count)
+        /// <inheritdoc />
+        public int GetAssignedProjectCount()
         {
-            _projectCount = count;
+            return _projectCount;
         }
     }
 }

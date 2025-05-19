@@ -3,7 +3,7 @@
 namespace Business
 {
     /// <summary>
-    /// Сервис бизнес-логики, использующий зависимости через абстракции.
+    /// Service that contains business logic and uses dependencies via abstractions.
     /// </summary>
     public class BusinessService
     {
@@ -12,11 +12,11 @@ namespace Business
         private readonly IIntern _intern;
 
         /// <summary>
-        /// Инициализирует новый экземпляр сервиса.
+        /// Initializes a new instance of the <see cref="BusinessService"/> class.
         /// </summary>
-        /// <param name="manager">Менеджер.</param>
-        /// <param name="developer">Разработчик.</param>
-        /// <param name="intern">Стажер.</param>
+        /// <param name="manager">An implementation of <see cref="IManager"/>.</param>
+        /// <param name="developer">An implementation of <see cref="IDeveloper"/>.</param>
+        /// <param name="intern">An implementation of <see cref="IIntern"/>.</param>
         public BusinessService(IManager manager, IDeveloper developer, IIntern intern)
         {
             _manager = manager;
@@ -25,17 +25,21 @@ namespace Business
         }
 
         /// <summary>
-        /// Запускает выполнение бизнес-логики.
+        /// Executes the business logic by displaying salaries and invoking each role's behavior.
         /// </summary>
         public void Run()
         {
-            Console.WriteLine($"Менеджер: Зарплата {_manager.Salary}");
+            Console.WriteLine($"Manager: Salary {_manager.Salary}");
             _manager.Manage();
 
-            Console.WriteLine($"\nРазработчик: Зарплата {_developer.Salary}");
+            Console.WriteLine();
+
+            Console.WriteLine($"Developer: Salary {_developer.Salary}");
             _developer.Develop();
 
-            Console.WriteLine($"\nСтажер: Зарплата {_intern.Salary}");
+            Console.WriteLine();
+
+            Console.WriteLine($"Intern: Salary {_intern.Salary}");
             _intern.Learn();
         }
     }
