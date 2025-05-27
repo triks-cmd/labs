@@ -11,11 +11,8 @@ namespace PeopleApp
         /// <summary>
         /// Runs the application logic.
         /// </summary>
-        public void Run()
+        public void Run(string filePath)
         {
-            Console.Write("Enter the path to the data file: ");
-            string filePath = Console.ReadLine();
-
             PersonFactory factory = new PersonFactory();
             List<Person> people = factory.LoadPeople(filePath);
 
@@ -83,7 +80,8 @@ namespace PeopleApp
         /// </summary>
         public static void Main(string[] args)
         {
-            new Program().Run();
+            string filePath = args.Length > 0 ? args[0] : "data.txt";
+            new Program().Run(filePath);
         }
     }
 }
