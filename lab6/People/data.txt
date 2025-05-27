@@ -1,0 +1,9 @@
+Smith 2010 schoolchild School_12 5 4 3 2 5
+Johnson 2008 schoolchild Lyceum_1 7 5 5 6 4
+Brown 2003 student StateU CS-21 5 6 5 5 6 5
+Davis 2002 student WesternU MT-11 4 3 5 5 4 5
+Miller 1985 teacher ResearchInstitute SeniorResearcher 500 550 600 580
+Wilson 1975 businessman FloralLLC Director 2000 2100 2500 2400 2300
+Muyiagi 1990 student SDC IT-21 5 6 3 4
+Dama 2003 teacher SDC 341 325 345 327
+Sisilia 2003 worker RRR 340 5 6 7 8
