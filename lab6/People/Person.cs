@@ -1,42 +1,55 @@
-﻿using System;
-
-namespace PeopleApp.Models
+﻿namespace PeopleApp.Models
 {
     /// <summary>
-    /// Represents a generic person with basic information.
+    /// Абстрактный базовый класс для любого человека.
+    /// Содержит фамилию, год рождения и статус.
     /// </summary>
     public abstract class Person
     {
-        /// <summary>Last name of the person.</summary>
+        /// <summary>Фамилия человека.</summary>
         public string LastName { get; set; }
 
-        /// <summary>Year of birth.</summary>
+        /// <summary>Год рождения человека.</summary>
         public int BirthYear { get; set; }
 
-        /// <summary>Status (student, teacher, businessman, etc.).</summary>
+        /// <summary>Статус (student, teacher, businessman и т.д.).</summary>
         public string Status { get; set; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Person"/> class.
+        /// Конструктор, инициализирующий фамилию, год рождения и статус.
         /// </summary>
-        protected Person(string lastName, int birthYear, string status)
+        /// <param name="lastName">Фамилия.</param>
+        /// <param name="birthYear">Год рождения.</param>
+        /// <param name="status">Статус.</param>
+        protected Person(
+            string lastName,
+            int birthYear,
+            string status)
         {
             LastName = lastName;
             BirthYear = birthYear;
             Status = status;
         }
 
-        /// <summary>
-        /// Gets additional information about the person.
-        /// </summary>
-        public abstract string GetAdditionalInfo();
+        /// <summary>Абстрактный метод для получения дополнительных сведений (Info).</summary>
+        /// <returns>Строка с дополнительными сведениями о человеке.</returns>
+        public abstract string Info();
 
         /// <summary>
-        /// Returns a formatted display string with all details.
+        /// Формирует строку для вывода всех основных полей + дополнительных сведений.
+        /// В виде: «Фамилия STATUS ГодРождения Info()».
         /// </summary>
+        /// <returns>Сформированная строка.</returns>
         public virtual string GetDisplayString()
         {
-            return $"{LastName}\t{Status}\t{BirthYear}\t{GetAdditionalInfo()}";
+            string result = LastName;
+            result = result + "\t";
+            result = result + Status;
+            result = result + "\t";
+            result = result + BirthYear;
+            result = result + "\t";
+            result = result + Info();
+            return result;
         }
     }
 }

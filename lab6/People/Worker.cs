@@ -1,24 +1,29 @@
-﻿using System;
-
-namespace PeopleApp.Models
+﻿namespace PeopleApp.Models
 {
     /// <summary>
-    /// Represents a working person with salary records.
+    /// Класс, представляющий рабочего (Worker).
+    /// Наследует Person, добавляет Workplace, Position, Salaries.
     /// </summary>
     public class Worker : Person
     {
-        /// <summary>Place of work.</summary>
+        /// <summary>Название рабочего места.</summary>
         public string Workplace { get; set; }
 
-        /// <summary>Position title.</summary>
+        /// <summary>Должность.</summary>
         public string Position { get; set; }
 
-        /// <summary>Salaries for each month.</summary>
+        /// <summary>Массив зарплат за 12 месяцев.</summary>
         public int[] Salaries { get; set; }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Worker"/> class.
+        /// Конструктор, инициализирующий все поля Worker.
         /// </summary>
+        /// <param name="lastName">Фамилия.</param>
+        /// <param name="birthYear">Год рождения.</param>
+        /// <param name="status">Статус.</param>
+        /// <param name="workplace">Место работы.</param>
+        /// <param name="position">Должность.</param>
+        /// <param name="salaries">Массив зарплат.</param>
         public Worker(
             string lastName,
             int birthYear,
@@ -26,37 +31,69 @@ namespace PeopleApp.Models
             string workplace,
             string position,
             int[] salaries)
-            : base(lastName, birthYear, status)
+            : base(
+                  lastName,
+                  birthYear,
+                  status)
         {
             Workplace = workplace;
             Position = position;
             Salaries = salaries;
         }
 
-        /// <summary>
-        /// Gets the maximum salary among all recorded months.
-        /// </summary>
+        /// <summary>Возвращает максимальную зарплату за все месяцы.</summary>
+        /// <returns>Максимальная зарплата.</returns>
         public int GetMaxSalary()
         {
-            if (Salaries == null || Salaries.Length == 0)
+            if (Salaries == null)
+            {
                 return 0;
+            }
+
+            int length = Salaries.Length;
+
+            if (length == 0)
+            {
+                return 0;
+            }
+
             int max = Salaries[0];
+
             foreach (int salary in Salaries)
-                if (salary > max)
+            {
+                bool isGreater = salary > max;
+
+                if (isGreater)
+                {
                     max = salary;
+                }
+            }
+
             return max;
         }
 
         /// <inheritdoc/>
-        public override string GetAdditionalInfo()
+        public override string Info()
         {
-            return GetMaxSalary().ToString();
+            int maxSalary = GetMaxSalary();
+            string asString = maxSalary.ToString();
+            return asString;
         }
 
         /// <inheritdoc/>
+        /// <remarks>
+        /// Вывод: Фамилия Статус Год MaxSalary.
+        /// </remarks>
         public override string GetDisplayString()
         {
-            return $"{LastName}\t{Status}\t{BirthYear}\t{GetAdditionalInfo()}";
+            string result = LastName;
+            result = result + "\t";
+            result = result + Status;
+            result = result + "\t";
+            result = result + BirthYear;
+            result = result + "\t";
+            result = result + Info();
+            return result;
         }
     }
 }
