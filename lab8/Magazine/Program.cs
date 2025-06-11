@@ -91,41 +91,49 @@
             }
         }
 
-        /// <summary>
-        /// Читает файл подписчиков и создает объекты <see cref="Subscriber"/>.
-        /// </summary>
-        /// <exception cref="FileNotFoundException">Если файл подписчиков не найден.</exception>
-        private void LoadSubscribers()
+       /// <summary>
+/// Читает файл подписчиков и создает объекты <see cref="Subscriber"/>.
+/// </summary>
+/// <exception cref="FileNotFoundException">Если файл подписчиков не найден.</exception>
+private void LoadSubscribers()
+{
+    if (!File.Exists(Path_Subscribers))
+    {
+        throw new FileNotFoundException("file not found");
+    }
+
+    // Для каждой строки в файле создаем новый объект Subscriber
+    foreach (var line in File.ReadLines(Path_Subscribers))
+    {
+        var parts = line.Split(';');
+
+        // Пропускаем некорректные строки
+        if (parts.Length < 3)
         {
-            if (!File.Exists(Path_Subscribers))
-            {
-                throw new FileNotFoundException("file not found");
-            }
-
-            // Для каждой строки в файле создаем новый объект Subscriber
-            foreach (var line in File.ReadLines(Path_Subscribers))
-            {
-                var parts = line.Split(';');
-
-                // Пропускаем некорректные строки
-                if (parts.Length < 3)
-                {
-                    continue;
-                }
-
-                // Получаем список названий журналов, разделенных запятой
-                string rawList = parts[2];
-                string[] splitNames = rawList.Split(',');
-                string[] names = splitNames
-                    .Select(s => s.Trim())
-                    .ToArray();
-
-                _subs.Add(new Subscriber(
-                    parts[0].Trim(),   // фамилия
-                    parts[1].Trim(),   // адрес
-                    names));           // журналы
-            }
+            continue;
         }
+
+        // Получаем список названий журналов, разделенных запятой
+        string rawList = parts[2];
+        string[] splitNames = rawList.Split(',');
+
+        // Обрезаем пробелы у каждого названия
+        var trimmedList = new List<string>();
+        foreach (var name in splitNames)
+        {
+            string trimmed = name.Trim();
+            trimmedList.Add(trimmed);
+        }
+
+        string[] names = trimmedList.ToArray();
+
+        _subs.Add(new Subscriber(
+            parts[0].Trim(),   // фамилия
+            parts[1].Trim(),   // адрес
+            names));           // журналы
+    }
+}
+
 
         /// <summary>
         /// Регистрирует каждого подписчика в соответствующих журналах и устанавливает изначальные цены.
