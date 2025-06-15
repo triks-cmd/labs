@@ -3,75 +3,82 @@
 namespace AeroflotFlights
 {
     /// <summary>
-    /// Main program class (no menu; sequential prompts).
+    /// Основной класс запуска приложения.
     /// </summary>
-    internal class Program
+    internal static class Program
     {
         /// <summary>
-        /// Main entry point: 
-        /// 1) Prompt for plane type → show flights.
-        /// 2) Prompt for destination → export flights.
+        /// Точка входа в программу.
         /// </summary>
         private static void Main()
         {
             FlightManager manager = new FlightManager();
 
-            PlaneType[] planeTypes = (PlaneType[])Enum.GetValues(typeof(PlaneType));
-            int selectedIndex = -1;
-
             while (true)
             {
                 Console.Clear();
-                Console.WriteLine("Available plane types:");
+                Console.WriteLine("=== Aeroflot Flight Manager ===");
                 Console.WriteLine();
 
-                for (int i = 0; i < planeTypes.Length; i++)
+                PlaneType[] types = Enum.GetValues<PlaneType>();
+
+                for (int i = 0; i < types.Length; i++)
                 {
-                    Console.WriteLine($"{i + 1}. {planeTypes[i]}");
+                    Console.WriteLine($"{i + 1}. {types[i]}");
                 }
 
+                Console.WriteLine("0. Exit");
                 Console.WriteLine();
-                Console.Write("Enter the number of the plane type to view its flights: ");
-                string input = Console.ReadLine();
-                bool parsed = int.TryParse(input, out selectedIndex);
+                Console.Write("Select plane type number: ");
 
-                if (!parsed || selectedIndex < 1 || selectedIndex > planeTypes.Length)
+                string input = Console.ReadLine();
+                bool isParsed = int.TryParse(input, out int choice);
+
+                if (!isParsed)
+                {
+                    Console.WriteLine("Invalid input. Press any key to retry...");
+                    Console.ReadKey();
+                    continue;
+                }
+
+                if (choice == 0)
+                {
+                    break;
+                }
+
+                if (choice < 1 || choice > types.Length)
                 {
                     Console.WriteLine("Invalid choice. Press any key to retry...");
                     Console.ReadKey();
                     continue;
                 }
 
-                selectedIndex--;
-                break;
+                PlaneType selectedType = types[choice - 1];
+
+                Console.Clear();
+                Console.WriteLine($"Flights of type {selectedType}:");
+                Console.WriteLine();
+                manager.PrintFlightsByType(selectedType);
+
+                Console.WriteLine();
+                Console.WriteLine("Press any key to export by destination or return...");
+                Console.ReadKey();
+
+                Console.Clear();
+                Console.Write("Enter destination to export flights (leave empty to skip): ");
+                string destinationInput = Console.ReadLine()?.Trim();
+
+                if (!string.IsNullOrEmpty(destinationInput))
+                {
+                    manager.ExportFlightsByDestination(destinationInput);
+                }
+
+                Console.WriteLine();
+                Console.WriteLine("Press any key to return to main menu...");
+                Console.ReadKey();
             }
 
-            PlaneType chosenType = planeTypes[selectedIndex];
-
-            Console.Clear();
-            Console.WriteLine($"Flights of type {chosenType}:");
-            Console.WriteLine();
-            manager.PrintFlightsByType(chosenType);
-
-            Console.WriteLine();
-            Console.WriteLine("Press any key to proceed to exporting by destination...");
-            Console.ReadKey();
-
-            Console.Clear();
-            Console.Write("Enter destination to export flights (e.g., Kyiv): ");
-            string destinationInput = Console.ReadLine().Trim();
-
-            if (string.IsNullOrWhiteSpace(destinationInput))
-            {
-                Console.WriteLine("Destination cannot be empty. Exiting.");
-                return;
-            }
-
-            manager.ExportFlightsByDestination(destinationInput);
-
-            Console.WriteLine();
-            Console.WriteLine("Done. Press any key to exit.");
-            Console.ReadKey();
+            Console.WriteLine("Exiting. Goodbye!");
         }
     }
 }

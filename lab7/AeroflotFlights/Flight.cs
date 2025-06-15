@@ -4,62 +4,57 @@ using System.Globalization;
 namespace AeroflotFlights
 {
     /// <summary>
-    /// Class representing a single flight.
+    /// Класс, представляющий один рейс.
     /// </summary>
     public class Flight
     {
-        // Constants for parsing date and time
+        /// <summary>Формат даты для разбора и вывода.</summary>
         private const string DateFormat = "dd.MM.yyyy";
+
+        /// <summary>Формат времени для разбора и вывода.</summary>
         private const string TimeFormat = "HH:mm";
 
-        /// <summary>
-        /// Flight number.
-        /// </summary>
+        /// <summary>Номер рейса (например, "182").</summary>
         public string FlightNumber { get; }
 
-        /// <summary>
-        /// Type of airplane.
-        /// </summary>
+        /// <summary>Тип самолета (из перечисления PlaneType).</summary>
         public PlaneType Type { get; }
 
-        /// <summary>
-        /// Destination city or airport.
-        /// </summary>
+        /// <summary>Пункт назначения рейса (город или аэропорт).</summary>
         public string Destination { get; }
 
-        /// <summary>
-        /// Date and time of departure.
-        /// </summary>
+        /// <summary>Дата и время отправления рейса.</summary>
         public DateTime DepartureDateTime { get; }
 
         /// <summary>
-        /// Days remaining until departure (0 if departure date is in the past).
+        /// Количество дней до отправления (или 0, если дата прошла).
         /// </summary>
         public int DaysUntilDeparture
         {
             get
             {
-                DateTime todayDate = DateTime.Now.Date;
-                TimeSpan difference = DepartureDateTime.Date - todayDate;
-                if (difference.Days >= 0)
+                DateTime today = DateTime.Now.Date;
+                TimeSpan difference = DepartureDateTime.Date - today;
+
+                if (difference.Days > 0)
                 {
                     return difference.Days;
                 }
-                else
-                {
-                    return 0;
-                }
+
+                return 0;
             }
         }
 
         /// <summary>
-        /// Constructor for Flight. Parses strings into appropriate types.
+        /// Инициализирует новый экземпляр Flight, парся входные строки.
         /// </summary>
-        /// <param name="flightNumber">Flight number string.</param>
-        /// <param name="planeTypeString">Plane type string that must match PlaneType enum.</param>
-        /// <param name="destination">Destination string.</param>
-        /// <param name="dateString">Departure date string in dd.MM.yyyy format.</param>
-        /// <param name="timeString">Departure time string in HH:mm format.</param>
+        /// <param name="flightNumber">Номер рейса.</param>
+        /// <param name="planeTypeString">Строковое представление типа самолета.</param>
+        /// <param name="destination">Пункт назначения.</param>
+        /// <param name="dateString">Дата отправления (dd.MM.yyyy).</param>
+        /// <param name="timeString">Время отправления (HH:mm).</param>
+        /// <exception cref="ArgumentNullException">Если обязательный параметр пустой.</exception>
+        /// <exception cref="ArgumentException">Если неверный формат типа, даты или времени.</exception>
         public Flight(
             string flightNumber,
             string planeTypeString,
@@ -67,44 +62,54 @@ namespace AeroflotFlights
             string dateString,
             string timeString)
         {
+            if (string.IsNullOrWhiteSpace(flightNumber))
+            {
+                throw new ArgumentNullException(nameof(flightNumber));
+            }
+
             FlightNumber = flightNumber.Trim();
 
-            // Parse planeTypeString into PlaneType enum
-            PlaneType parsedType;
-            bool parsedEnum = Enum.TryParse(planeTypeString.Trim(), true, out parsedType);
-            if (!parsedEnum)
+            bool parsedType = Enum.TryParse(
+                planeTypeString?.Trim(),
+                ignoreCase: true,
+                result: out PlaneType parsed);
+
+            if (!parsedType)
             {
-                throw new ArgumentException("Invalid plane type: " + planeTypeString);
+                throw new ArgumentException(
+                    $"Invalid plane type: '{planeTypeString}'",
+                    nameof(planeTypeString));
             }
-            Type = parsedType;
+
+            Type = parsed;
+
+            if (string.IsNullOrWhiteSpace(destination))
+            {
+                throw new ArgumentNullException(nameof(destination));
+            }
 
             Destination = destination.Trim();
 
-            // Parse date part
-            DateTime datePart;
             bool parsedDate = DateTime.TryParseExact(
-                dateString.Trim(),
+                dateString?.Trim(),
                 DateFormat,
                 CultureInfo.InvariantCulture,
                 DateTimeStyles.None,
-                out datePart);
+                out DateTime datePart);
 
-            // Parse time part
-            DateTime timePart;
             bool parsedTime = DateTime.TryParseExact(
-                timeString.Trim(),
+                timeString?.Trim(),
                 TimeFormat,
                 CultureInfo.InvariantCulture,
                 DateTimeStyles.None,
-                out timePart);
+                out DateTime timePart);
 
             if (!parsedDate || !parsedTime)
             {
                 throw new ArgumentException(
-                    "Invalid date or time format: " + dateString + " " + timeString);
+                    $"Invalid date or time format: '{dateString} {timeString}'");
             }
 
-            // Combine date and time into a single DateTime
             DepartureDateTime = new DateTime(
                 datePart.Year,
                 datePart.Month,
@@ -115,13 +120,20 @@ namespace AeroflotFlights
         }
 
         /// <summary>
-        /// Returns a formatted string with flight information.
+        /// Возвращает строку с информацией о рейсе для вывода.
         /// </summary>
+        /// <returns>Строка: номер, время, дата, дни до вылета.</returns>
         public string GetInfoString()
         {
-            string timeString = DepartureDateTime.ToString(TimeFormat);
-            string dateString = DepartureDateTime.ToString(DateFormat);
-            return $"{FlightNumber,-5} {timeString,-5} {dateString,-10} {DaysUntilDeparture}";
+            string time = DepartureDateTime.ToString(TimeFormat);
+            string date = DepartureDateTime.ToString(DateFormat);
+
+            return string.Format(
+                "{0,-5} {1,-5} {2,-10} {3}",
+                FlightNumber,
+                time,
+                date,
+                DaysUntilDeparture);
         }
     }
 }

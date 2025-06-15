@@ -7,10 +7,10 @@ namespace AeroflotFlights
     /// </summary>
     public enum PlaneType
     {
-        Boeing767 = 1,
-        Tu154 = 2,
-        Il85 = 3,
-        Il86 = 4,
-        Boeing787 = 5
+        Boeing767,
+        Tu154,
+        Il85,
+        Il86,
+        Boeing787
     }
 }
