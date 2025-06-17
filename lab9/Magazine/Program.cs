@@ -1,113 +1,86 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-
-namespace MagazineApp
+﻿namespace MagazineApp
 {
-    /// <summary>
-    /// Главный класс приложения для управления подписками на журналы.
-    /// </summary>
-    class Program
+    internal class Program
     {
         private const string PathMags = "magazines.txt";
         private const string PathSubs = "subscribers.txt";
 
-        /// <summary>
-        /// Событие для оповещения об изменении данных.
-        /// </summary>
-        public static event Action DataChanged;
+        public delegate void DataChangedHandler();
 
-        private List<Magazine> _mags;
-        private List<Subscriber> _subs;
+        public static event DataChangedHandler? DataChanged = delegate { };
+        public static event DataChangedHandler? SubscriberAdded = delegate { };
+        public static event DataChangedHandler? SubscriberRemoved = delegate { };
+        public static event DataChangedHandler? MagazineAdded = delegate { };
+        public static event DataChangedHandler? MagazineRemoved = delegate { };
 
-        /// <summary>
-        /// Точка входа в приложение.
-        /// </summary>
-        static void Main()
+        private List<Magazine> _mags = new();
+        private List<Subscriber> _subs = new();
+
+        private static void Main()
         {
-            var program = new Program();
+            Program program = new();
+            DataChanged += program.ShowLinqInfo;
+            SubscriberAdded += program.ShowLinqInfo;
+            SubscriberRemoved += program.ShowLinqInfo;
+            MagazineAdded += program.ShowLinqInfo;
+            MagazineRemoved += program.ShowLinqInfo;
             program.Run();
         }
 
-        /// <summary>
-        /// Основной метод выполнения программы.
-        /// </summary>
         private void Run()
         {
             LoadData();
-            DataChanged += ShowLinqInfo;
+            DataChanged.Invoke();
             ShowMenu();
         }
 
-        /// <summary>
-        /// Загружает данные из файлов.
-        /// </summary>
-        /// <exception cref="FileNotFoundException">Выбрасывается, если файлы не найдены.</exception>
         private void LoadData()
         {
-            bool magsExists = File.Exists(PathMags);
-            if (!magsExists)
+            if (!File.Exists(PathMags))
             {
                 throw new FileNotFoundException();
             }
 
-            bool subsExists = File.Exists(PathSubs);
-            if (!subsExists)
+            if (!File.Exists(PathSubs))
             {
                 throw new FileNotFoundException();
             }
 
-            var magazineLines = File.ReadLines(PathMags);
-            _mags = magazineLines
+            _mags = File
+                .ReadLines(PathMags)
                 .Select(line => line.Split(';'))
-                .Where(parts => parts.Length >= 2)
-                .Where(parts => decimal.TryParse(parts[1], out _))
-                .Select(parts => new Magazine(
-                    parts[0].Trim(),
-                    decimal.Parse(parts[1].Trim())))
+                .Where(parts => parts.Length >= 2 && decimal.TryParse(parts[1], out _))
+                .Select(parts => new Magazine(parts[0].Trim(), decimal.Parse(parts[1].Trim())))
                 .ToList();
 
-            var subscriberLines = File.ReadLines(PathSubs);
-            _subs = subscriberLines
+            _subs = File
+                .ReadLines(PathSubs)
                 .Select(line => line.Split(';'))
                 .Where(parts => parts.Length >= 3)
                 .Select(parts =>
                 {
-                    var rawNames = parts[2].Split(',');
-                    var names = rawNames
-                        .Select(name => name.Trim())
+                    string[] names = parts[2]
+                        .Split(',')
+                        .Select(n => n.Trim())
                         .ToArray();
 
-                    return new Subscriber(
-                        parts[0].Trim(),
-                        parts[1].Trim(),
-                        names);
+                    return new Subscriber(parts[0].Trim(), parts[1].Trim(), names);
                 })
                 .ToList();
 
-            foreach (var subscriber in _subs)
+            foreach (Subscriber sub in _subs)
             {
-                for (int i = 0; i < subscriber.MagazineNames.Length; i++)
+                foreach (string magName in sub.MagazineNames)
                 {
-                    string magName = subscriber.MagazineNames[i];
-                    var magazine = _mags.FirstOrDefault(m => m.Name == magName);
-                    if (magazine == null)
+                    Magazine? magazine = _mags.FirstOrDefault(m => m.Name == magName);
+                    if (magazine is not null)
                     {
-                        continue;
+                        magazine.Subscribe(sub);
                     }
-
-                    subscriber.SetMagazinePrice(i, magazine.AnnualPrice);
-                    magazine.Subscribe(subscriber);
                 }
             }
-
-            DataChanged?.Invoke();
         }
 
-        /// <summary>
-        /// Отображает главное меню приложения.
-        /// </summary>
         private void ShowMenu()
         {
             while (true)
@@ -118,11 +91,16 @@ namespace MagazineApp
                 Console.WriteLine("3.Change price");
                 Console.WriteLine("4.LINQ Info");
                 Console.WriteLine("5.Filter subs");
-                Console.WriteLine("6.Exit");
+                Console.WriteLine("6.Add subscriber");
+                Console.WriteLine("7.Remove subscriber");
+                Console.WriteLine("8.Add magazine");
+                Console.WriteLine("9.Remove magazine");
+                Console.WriteLine("10.Exit");
                 Console.Write("Select: ");
 
-                var input = Console.ReadLine();
-                switch (input)
+                string? choice = Console.ReadLine();
+
+                switch (choice)
                 {
                     case "1":
                         PrintSubscribers();
@@ -140,6 +118,18 @@ namespace MagazineApp
                         FilterMenu();
                         break;
                     case "6":
+                        AddSubscriber();
+                        break;
+                    case "7":
+                        RemoveSubscriber();
+                        break;
+                    case "8":
+                        AddMagazine();
+                        break;
+                    case "9":
+                        RemoveMagazine();
+                        break;
+                    case "10":
                         return;
                     default:
                         Console.WriteLine("Invalid");
@@ -148,36 +138,27 @@ namespace MagazineApp
             }
         }
 
-        /// <summary>
-        /// Выводит список подписчиков.
-        /// </summary>
         private void PrintSubscribers()
         {
-            bool hasSubscribers = _subs.Any();
-            if (!hasSubscribers)
+            if (!_subs.Any())
             {
                 Console.WriteLine("No data");
                 return;
             }
 
             Console.WriteLine("№\tLastName\tAddress\tMagazines\tTotal");
+
             int index = 1;
 
-            var orderedSubs = _subs.OrderByDescending(s => s.TotalCost);
-            foreach (var subscriber in orderedSubs)
+            foreach (Subscriber subscriber in _subs.OrderByDescending(s => s.TotalCost))
             {
-                Console.WriteLine($"{index}\t{subscriber}");
-                index++;
+                Console.WriteLine($"{index++}\t{subscriber}");
             }
         }
 
-        /// <summary>
-        /// Изменяет название журнала.
-        /// </summary>
         private void ChangeName()
         {
-            bool hasMags = _mags.Any();
-            if (!hasMags)
+            if (!_mags.Any())
             {
                 Console.WriteLine("No data");
                 return;
@@ -185,39 +166,29 @@ namespace MagazineApp
 
             for (int i = 0; i < _mags.Count; i++)
             {
-                var mag = _mags[i];
-                Console.WriteLine($"{i + 1}. {mag.Name} ({mag.AnnualPrice})");
+                Console.WriteLine($"{i + 1}. {_mags[i].Name} ({_mags[i].AnnualPrice})");
             }
 
             Console.Write("#: ");
-            var input = Console.ReadLine();
-            bool parsedIndex = int.TryParse(input, out int selected);
-            if (!parsedIndex)
-            {
-                Console.WriteLine("Invalid");
-                return;
-            }
 
-            bool validIndex = selected > 0 && selected <= _mags.Count;
-            if (!validIndex)
+            if (!int.TryParse(Console.ReadLine(), out int idx) || idx < 1 || idx > _mags.Count)
             {
                 Console.WriteLine("Invalid");
                 return;
             }
 
             Console.Write("New name: ");
-            var newName = Console.ReadLine().Trim();
-            _mags[selected - 1].ChangeName(newName);
-            DataChanged?.Invoke();
+
+            string newName = Console.ReadLine()?.Trim() ?? string.Empty;
+
+            _mags[idx - 1].ChangeName(newName);
+
+            DataChanged.Invoke();
         }
 
-        /// <summary>
-        /// Изменяет цену подписки на журнал.
-        /// </summary>
         private void ChangePrice()
         {
-            bool hasMags = _mags.Any();
-            if (!hasMags)
+            if (!_mags.Any())
             {
                 Console.WriteLine("No data");
                 return;
@@ -225,103 +196,162 @@ namespace MagazineApp
 
             for (int i = 0; i < _mags.Count; i++)
             {
-                var mag = _mags[i];
-                Console.WriteLine($"{i + 1}. {mag.Name} ({mag.AnnualPrice})");
+                Console.WriteLine($"{i + 1}. {_mags[i].Name} ({_mags[i].AnnualPrice})");
             }
 
             Console.Write("#: ");
-            var input = Console.ReadLine();
-            bool parsedIndex = int.TryParse(input, out int selected);
-            if (!parsedIndex)
-            {
-                Console.WriteLine("Invalid");
-                return;
-            }
 
-            bool validIndex = selected > 0 && selected <= _mags.Count;
-            if (!validIndex)
+            if (!int.TryParse(Console.ReadLine(), out int idx) || idx < 1 || idx > _mags.Count)
             {
                 Console.WriteLine("Invalid");
                 return;
             }
 
             Console.Write("New price: ");
-            var priceInput = Console.ReadLine();
-            bool parsedPrice = decimal.TryParse(priceInput, out var newPrice);
-            if (!parsedPrice)
+
+            if (!decimal.TryParse(Console.ReadLine(), out decimal price))
             {
                 Console.WriteLine("Invalid");
                 return;
             }
 
-            _mags[selected - 1].ChangePrice(newPrice);
-            DataChanged?.Invoke();
+            _mags[idx - 1].ChangePrice(price);
+
+            DataChanged.Invoke();
         }
 
-        /// <summary>
-        /// Выводит LINQ-статистику.
-        /// </summary>
+        private void AddSubscriber()
+        {
+            Console.Write("LastName: ");
+            string lastName = Console.ReadLine()?.Trim() ?? string.Empty;
+
+            Console.Write("Address: ");
+            string address = Console.ReadLine()?.Trim() ?? string.Empty;
+
+            Console.Write("Magazines (comma-separated): ");
+            string[] names = Console.ReadLine()?.Split(',').Select(n => n.Trim()).ToArray() ?? Array.Empty<string>();
+
+            Subscriber sub = new(lastName, address, names);
+
+            for (int i = 0; i < names.Length; i++)
+            {
+                Magazine? magazine = _mags.FirstOrDefault(m => m.Name == names[i]);
+                if (magazine is not null)
+                {
+                    sub.SetMagazinePrice(i, magazine.AnnualPrice);
+                    magazine.Subscribe(sub);
+                }
+            }
+
+            _subs.Add(sub);
+
+            SubscriberAdded.Invoke();
+        }
+
+        private void RemoveSubscriber()
+        {
+            PrintSubscribers();
+
+            Console.Write("№ to remove: ");
+
+            if (!int.TryParse(Console.ReadLine(), out int idx) || idx < 1 || idx > _subs.Count)
+            {
+                Console.WriteLine("Invalid");
+                return;
+            }
+
+            _subs.RemoveAt(idx - 1);
+
+            SubscriberRemoved.Invoke();
+        }
+
+        private void AddMagazine()
+        {
+            Console.Write("Name: ");
+            string name = Console.ReadLine()?.Trim() ?? string.Empty;
+
+            Console.Write("Annual price: ");
+
+            if (!decimal.TryParse(Console.ReadLine(), out decimal price))
+            {
+                Console.WriteLine("Invalid");
+                return;
+            }
+
+            Magazine mag = new(name, price);
+
+            _mags.Add(mag);
+
+            MagazineAdded.Invoke();
+        }
+
+        private void RemoveMagazine()
+        {
+            for (int i = 0; i < _mags.Count; i++)
+            {
+                Console.WriteLine($"{i + 1}. {_mags[i].Name}");
+            }
+
+            Console.Write("№ to remove: ");
+
+            if (!int.TryParse(Console.ReadLine(), out int idx) || idx < 1 || idx > _mags.Count)
+            {
+                Console.WriteLine("Invalid");
+                return;
+            }
+
+            _mags.RemoveAt(idx - 1);
+
+            MagazineRemoved.Invoke();
+        }
+
         private void ShowLinqInfo()
         {
             Console.WriteLine($"Total magazines: {_mags.Count}");
             Console.WriteLine($"Total subscribers: {_subs.Count}");
-
-            var sortedNames = _mags
-                .OrderBy(m => m.Name)
-                .Select(m => m.Name);
-            var joinedNames = string.Join(", ", sortedNames);
-            Console.WriteLine($"Sorted by name: {joinedNames}");
-
-            var averageCost = _subs.Average(s => s.TotalCost);
-            Console.WriteLine($"Average subscription cost: {averageCost:F2}");
+            Console.WriteLine($"List of mags: {string.Join(", ", _mags.OrderBy(m => m.Name).Select(m => m.Name))}");
+            Console.WriteLine($"Avg. subscription cost: {_subs.Average(s => s.TotalCost):F2}");
         }
 
-        /// <summary>
-        /// Отображает меню фильтрации подписчиков.
-        /// </summary>
         private void FilterMenu()
         {
-            Console.WriteLine("1.By magazine");
-            Console.WriteLine("2.By street");
-            Console.WriteLine("3.By cost");
-            Console.Write("#: ");
+            Console.WriteLine("1.By magazine  2.By street  3.By cost");
 
-            var choice = Console.ReadLine();
+            string? choice = Console.ReadLine();
+
             switch (choice)
             {
                 case "1":
                     Console.Write("Magazine name: ");
-                    var magazineName = Console.ReadLine().Trim();
-                    var byMagazine = _subs.Where(s => s.MagazineNames.Contains(magazineName));
-                    foreach (var subscriber in byMagazine)
+                    string magName = Console.ReadLine()?.Trim() ?? string.Empty;
+                    foreach (Subscriber s in _subs.Where(s => s.MagazineNames.Contains(magName)))
                     {
-                        Console.WriteLine(subscriber);
+                        Console.WriteLine(s);
                     }
+
                     break;
                 case "2":
                     Console.Write("Street contains: ");
-                    var street = Console.ReadLine().Trim();
-                    var byStreet = _subs.Where(s => s.Address.Contains(street));
-                    foreach (var subscriber in byStreet)
+                    string street = Console.ReadLine()?.Trim() ?? string.Empty;
+                    foreach (Subscriber s in _subs.Where(s => s.Address.Contains(street)))
                     {
-                        Console.WriteLine(subscriber);
+                        Console.WriteLine(s);
                     }
+
                     break;
                 case "3":
                     Console.Write("Min total cost: ");
-                    var costInput = Console.ReadLine();
-                    bool parsedMin = decimal.TryParse(costInput, out var minCost);
-                    if (!parsedMin)
+                    if (!decimal.TryParse(Console.ReadLine(), out decimal min))
                     {
                         Console.WriteLine("Invalid");
                         return;
                     }
 
-                    var byCost = _subs.Where(s => s.TotalCost > minCost);
-                    foreach (var subscriber in byCost)
+                    foreach (Subscriber s in _subs.Where(s => s.TotalCost > min))
                     {
-                        Console.WriteLine(subscriber);
+                        Console.WriteLine(s);
                     }
+
                     break;
                 default:
                     Console.WriteLine("Invalid");
